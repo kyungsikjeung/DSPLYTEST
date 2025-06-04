@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.bg-header {
+  background: url(https://picsum.photos/1920/1920/?random) center center no-repeat;
+  background-attachment: fixed;
+}
+
+.bg-quote {
+  background: url(https://picsum.photos/1600/1600/?random) center center no-repeat;
+  background-attachment: fixed;
+}
