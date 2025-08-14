@@ -104,3 +104,14 @@ export const cleanLogFile = async () => {
   }
 };
 
+/** GET /getRawData : 로그 파일 내용 가져오기 */
+export const getData = async () => {
+  try {
+    const { data } = await serialApi.get('/getData'); // SimpleMessage
+    return data;
+  } catch (error) {
+    console.error('Error on /getRawData:', error?.response?.data ?? error.message);
+    throw error;
+  }
+};
+

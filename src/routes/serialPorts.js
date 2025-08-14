@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const {SerialPortManager} = require('../services/serial/serialdriver.js');
-const {readTextWriteExcel,deleteFile} = require('../services/logs/log.js');
-const mime = require("mime");
+const {getRawData,readTextWriteExcel,deleteFile} = require('../services/logs/log.js');
+
 router.get('/list', async (req, res) => {
   try {
     const ports = await SerialPortManager.listPorts(); // SerialPort.list()
@@ -54,7 +54,7 @@ router.get('/connect', async (req, res) => {
   try {
     const ports = await SerialPortManager.listPorts(); // SerialPort.list()
     const filteredPorts = ports.filter(row => row.manufacturer === 'KONICA MINOLTA, INC.');
-    console.log("연결 시도:", JSON.stringify(filteredPorts));
+    // console.log("연결 시도:", JSON.stringify(filteredPorts));
     if (filteredPorts.length === 0) {
       return res.status(200).json({
         success: false,
@@ -83,7 +83,7 @@ router.get('/connect', async (req, res) => {
 
    for (const command of luminanceOnlyCommands) {
      await serialPortManager.sendData(command);
-     console.log(`Sent command: ${command}`);
+    //  console.log(`Sent command: ${command}`);
      await new Promise(resolve => setTimeout(resolve, 10));
    }
 
@@ -154,7 +154,7 @@ router.get('/measure', async(req, res) => {
   try {
     for (const command of luminanceOnlyCommands) {
       await serialPortManager.sendData(command);
-      console.log(`Sent command: ${command}`);
+      // console.log(`Sent command: ${command}`);
       // CA410이 명령을 처리할 시간 제공
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -212,6 +212,11 @@ router.get('/clean', async(req, res) => {
   await deleteFile();
   return res.status(200).json({ message: 'All files deleted successfully' });
 
+});
+
+router.get('/getData', async (req, res) => {
+  const rawData = await getRawData();
+  res.status(200).json(rawData);
 });
 
 module.exports = router;
