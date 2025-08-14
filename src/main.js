@@ -51,13 +51,9 @@ const setupEventListeners = () => {
 
 };
 
-
-
-
 let subWindow;
 let prevUrl = null;
 let currentUrl = null;
-
 //  모니터 정보 전역변수
 var monitorX = 0;
 var monitorY = 0;

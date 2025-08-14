@@ -6,7 +6,7 @@
   "main": ".webpack/main",
   "scripts": {
     "devstart": "electron-forge start",
-    "devserver": "nodemon ./src/server.js", 
+    "devserver": "nodemon ./src/server.js",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
@@ -72,6 +72,8 @@
     "express": "^4.21.0",
     "fs": "^0.0.1-security",
     "helmet": "^8.0.0",
+    "mime": "^4.0.7",
+    "mine": "^0.1.0",
     "morgan": "^1.10.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

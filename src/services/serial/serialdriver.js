@@ -4,23 +4,35 @@ const path = require('path');
 const receivedEvent = require("../event/event.js");
 const { SerialPort } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
+const {appendLog} = require('../logs/log.js');
 
 // 개발 환경과 프로덕션 환경 구분
 let LOG_DIR;
-const isPackaged = process.env.NODE_ENV === 'production' || process.defaultApp === false || /[\\/]electron\.exe$/.test(process.execPath);
+// 더 안전한 패키징 감지 방법
+let isPackaged = false;
+try {
+  const { app } = require('electron');
+  isPackaged = app.isPackaged;
+} catch (err) {
+  // electron이 없거나 접근할 수 없는 경우, 경로로 판단
+  isPackaged = __dirname.includes('app.asar') || process.resourcesPath !== process.cwd();
+}
+
+console.log('Environment check:', {
+  isPackaged,
+  __dirname,
+  'process.cwd()': process.cwd(),
+  'process.resourcesPath': process.resourcesPath
+});
 
 if (isPackaged) {
   // 프로덕션: extraResources로 복사된 경로 사용
   LOG_DIR = path.join(process.resourcesPath, 'src', 'services', 'logs');
+  console.log('Using PRODUCTION path:', LOG_DIR);
 } else {
-  // 개발: webpack 환경을 고려한 절대 경로 사용
-  if (process.env.WEBPACK_DEV_SERVER || __dirname.includes('.webpack')) {
-    // webpack 개발 환경: 프로젝트 루트에서 찾기
-    LOG_DIR = path.join(process.cwd(), 'src', 'services', 'logs');
-  } else {
-    // 일반 개발 환경: 현재 경로 사용
-    LOG_DIR = path.join(__dirname, 'log');
-  }
+  // 개발: 프로젝트 루트에서 찾기
+  LOG_DIR = path.join(process.cwd(), 'src', 'services', 'logs');
+  console.log('Using DEVELOPMENT path:', LOG_DIR);
 }
 
 const excelFile = path.join(LOG_DIR, 'gamma_result.xlsx');
@@ -39,6 +51,36 @@ try {
     console.error('로그 디렉터리 생성 실패:', mkdirErr);
   }
 }
+
+// Excel 파일 초기화 함수
+async function initializeExcelFile() {
+  try {
+    // 파일이 존재하는지 확인
+    fs.accessSync(excelFile, fs.constants.F_OK);
+    console.log('Excel 파일이 이미 존재합니다:', excelFile);
+  } catch (err) {
+    // 파일이 없으면 새로 생성
+    console.log('Excel 파일을 새로 생성합니다:', excelFile);
+    try {
+      const XlsxPopulate = require("xlsx-populate");
+      const workbook = await XlsxPopulate.fromBlankAsync();
+      const sheet = workbook.sheet("Sheet1");
+      
+      // 기본 헤더 설정
+      sheet.cell("A1").value("Index");
+      sheet.cell("B1").value("Luminance");
+      sheet.cell("C1").value("Timestamp");
+      
+      await workbook.toFileAsync(excelFile);
+      console.log('Excel 파일 생성 완료:', excelFile);
+    } catch (createErr) {
+      console.error('Excel 파일 생성 실패:', createErr);
+    }
+  }
+}
+
+// 초기화 실행
+initializeExcelFile();
 
 
 
@@ -65,7 +107,7 @@ const CA410_DEFAULTS = Object.freeze({
   parity: 'even',
   rtscts: true,
   autoOpen: false,
-  delimiter: '\r', // CR
+  delimiter: '\r', // !주의 CA410은 보통 CR 응답
 });
 
 // ---- 유틸: 디렉터리 보장 ----
@@ -99,17 +141,7 @@ function parseCA410LineForLv(line) {
   return null;
 }
 
-// ---- 유틸: 로그 파일 append ----
- function appendLog(text) {
-  try {
-    fs.appendFile(logFilePath, text.concat("\n"), (err) => {
-        if (err) console.error('로그 기록 실패:', err);
-     });
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('로그 기록 실패:', e);
-  }
-}
+
 
 class SerialPortManager {
   static #instance = null;
@@ -185,14 +217,11 @@ class SerialPortManager {
         const text = typeof line === 'string' ? line : Buffer.from(line).toString('utf8');
         // eslint-disable-next-line no-console
         console.log(`Parser data: ${text}`);
-        console.log(`Received data logPath: ${logFilePath}`);
-
         const lv = parseCA410LineForLv(text);
         if (lv !== null) { // 검사 통과
           console.log('here')
           await appendLog(lv);
         }
-
         this.events.emit('data', text);
       } catch (e) {
         // eslint-disable-next-line no-console
@@ -342,9 +371,7 @@ module.exports = {
   fs, // 기존 호환성 유지가 필요하면 내보냄 (가능하면 외부에서 직접 fs 사용 권장)
   excelFile,
   logFilePath,
-  utils: {
-    // ensureLogDir,
-    appendLog,
+  utils: {    
     parseCA410LineForLv,
   },
 };

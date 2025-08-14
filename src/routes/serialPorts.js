@@ -1,7 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const {SerialPortManager,fs,exelFile,logFilePath} = require('../services/serial/serialdriver.js');
-const XlsxPopulate = require("xlsx-populate");
+
+const {SerialPortManager} = require('../services/serial/serialdriver.js');
+const {readTextWriteExcel,deleteFile} = require('../services/logs/log.js');
+const mime = require("mime");
+router.get('/list', async (req, res) => {
+  try {
+    const ports = await SerialPortManager.listPorts(); // SerialPort.list()
+    const portNames = ports.map(port => port.path);
+    res.status(200).json(portNames);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // has CA410
 router.get('/hasCA410', async (req, res) => {
@@ -18,15 +30,7 @@ router.get('/hasCA410', async (req, res) => {
 });
 
 
-router.get('/list', async (req, res) => {
-  try {
-    const ports = await SerialPortManager.listPorts(); // SerialPort.list()
-    const portNames = ports.map(port => port.path);
-    res.status(200).json(portNames);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+
 
 /* Serial Port Connect */
 /**
@@ -130,7 +134,7 @@ router.get('/status', async (req, res) => {
 });
 
 router.get('/clean', (req,res)=>{
-  fs.writeFileSync(logFilePath, '', 'utf-8'); // 파일만 비우기
+  //fs.writeFileSync(logFilePath, '', 'utf-8'); // 파일만 비우기
   res.status(200).json({ message: 'Log file cleaned successfully' });
 })
 
@@ -147,8 +151,8 @@ router.get('/measure', async(req, res) => {
     for (const command of luminanceOnlyCommands) {
       await serialPortManager.sendData(command);
       console.log(`Sent command: ${command}`);
-      // delay
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // CA410이 명령을 처리할 시간 제공
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
     res.status(200).json({ message: 'Data sent successfully' });
   } catch (error) {
@@ -161,86 +165,50 @@ router.get('/measure', async(req, res) => {
 /* 감마 액셀 파일  */
 router.get('/downloadgamma', async(req, res) => {
   try {
-    if (!fs.existsSync(logFilePath)) {
+    const createdFile = await readTextWriteExcel();
+    if (!createdFile) {
+      return res.status(500).json({ error: 'Error creating file' });
+    }
+    
+    console.log('Download Gamma from route: ' + createdFile);
+    
+    // 파일 존재 및 크기 확인
+    const fs = require('fs');
+    if (!fs.existsSync(createdFile)) {
       return res.status(404).json({ error: 'File not found' });
-    }    
-    // Get Line log filePath
-    fs.readFile(logFilePath, 'utf-8', (err, data) => {
-      if (err) {
-        console.error('Error reading log file:', err);
-        return res.status(500).json({ error: 'Error reading log file' });
-      }
-      const lines = data.split('\n').filter(line => line.trim() !== '');
-      console.log('Read lines length:', lines.length);
-      let sheetNum  = (Number(lines.length)  / Number(64));
-      console.log('Sheet number:', sheetNum);
-      for(var i=0; i< sheetNum; i++ ){
-          let column = '';
-          switch(i){
-            case 0:
-              column = 'C';
-                break;
-              case 1:
-              column = 'E';
-              break;
-            case 2:
-              column = 'G';
-              break;
-            case 3:
-              column = 'I';
-              break;
-            case 4:
-              column = 'K';
-              break;
-            default:
-              column = 'C';
-          }
-          const startRow = 7;
-          const endRow = 70;  //  64개 데이터
-          console.log(`Column: ${column}, Start Row: ${startRow}, End Row: ${endRow}`);
-
-          //  320개 풀로 채웠을떄 C,E,,G,I,K
-      }
-      for(let i=0; i<lines.length; i++){
-        const col = String.fromCharCode(67 + (Number(i)/Number(64)) ); // C, E, G, I, K
-        const row = Number(i) % Number(64) + 7;
-        const data = lines[i];
-        console.log(`cell: ${col}${row} with data: ${data}`);
-      }
-      
-
-      res.json({ lines }); // line들에 대해서 읽은값
-    });
-
-
+    }
+    
+    const stats = fs.statSync(createdFile);
+    console.log('Original file size:', stats.size, 'bytes');
+    
+    // 바이너리 모드로 파일 읽기
+    const fileBuffer = fs.readFileSync(createdFile);
+    console.log('Buffer size:', fileBuffer.length, 'bytes');
+    
+    // 올바른 헤더 설정
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="gamma_report.xlsx"');
+    res.setHeader('Content-Length', stats.size);
+    
+    // 방법 1: 파일 스트림 사용 (메모리 효율적)
+    const fileStream = fs.createReadStream(createdFile);
+    fileStream.pipe(res);
+    
+    // 방법 2: 버퍼 직접 전송 (간단함)
+    // res.send(fileBuffer);
+    
   } catch (error) {
-    res.status(200).json({ error: error.message });
+    console.error('Error in downloadgamma:', error);
+    res.status(500).json({ error: error.message });
   }
-
 });
 
-router.get('/downloadcontratioratio', async(req, res) => {
-  try {
-    if (!fs.existsSync(logFilePath)) {
-      return res.status(404).json({ error: 'File not found' });
-    }    
-    // Get Line log filePath
-    fs.readFile(logFilePath, 'utf-8', (err, data) => {
-      if (err) {
-        console.error('Error reading log file:', err);
-        return res.status(500).json({ error: 'Error reading log file' });
-      }
-      const lines = data.split('\n').filter(line => line.trim() !== '');
-      res.json({ lines });
-    });
-
-
-  } catch (error) {
-    res.status(200).json({ error: error.message });
-  }
+/* 저장된 파일 제거  */
+router.get('/clean', async(req, res) => {
+  await deleteFile();
+  return res.status(200).json({ message: 'All files deleted successfully' });
 
 });
-
 
 module.exports = router;
 
