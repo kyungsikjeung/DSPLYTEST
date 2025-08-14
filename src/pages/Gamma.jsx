@@ -38,34 +38,43 @@ export const Gamma = () => {
     setLog('');
   };
 
+  let greyIndex = 0;
+
   const taskProcess = async () => {
-    if (greyIndexRef.current >= 256) {
-      greyIndexRef.current = 255;
+    if (greyIndex >= 256) {
+      greyIndex = 255;
     }
 
-    const msg = `Grey ${greyIndexRef.current}`;
-    window.color?.send('grey', greyIndexRef.current);
+    const msg = `Grey ${greyIndex}`;
+    window.color?.send('grey', greyIndex);
     console.log('감마 측정하기');
     setLog((prev) => `[${getFormattedTime()}] ${msg}\n`);
 
     await measureLuminance();
-    greyIndexRef.current += 4;
+    greyIndex += 4;
   };
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+  const cleanTextFile = async () => {
+    await cleanLogFile();
+    setLog('텍스트 파일이 비워졌습니다.');
+    console.log('텍스트 파일이 비워졌습니다.');
+  }
+
   const measureGamma = async () => {
     window.newWindow?.open('colorratiosubwindow');
+    greyIndex = 0;
     await cleanLogFile();
     await sleep(3000);
 
     if (!taskRef.current) {
       taskRef.current = setInterval(async () => {
         await taskProcess();
-        if (greyIndexRef.current > 256) {
+        if (greyIndex > 256) {
           clearInterval(taskRef.current);
           taskRef.current = null;
-          greyIndexRef.current = 0;
+          greyIndex = 0;
 
           setLog((prev) => `Gray 255\n`);
           setTimeout(() => {
@@ -76,6 +85,9 @@ export const Gamma = () => {
       }, 800);
     }
   };
+
+
+  
 
   const downloadGammaXlsx = async () => {
     try {
@@ -139,6 +151,12 @@ export const Gamma = () => {
           onClick={downloadLog}
         >
           로그 다운로드
+        </button>
+        <button
+          className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded mx-1 my-1"
+          onClick={cleanTextFile}
+        >
+          텍스트파일제거
         </button>
       </div>
     </div>

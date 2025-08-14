@@ -133,9 +133,13 @@ router.get('/status', async (req, res) => {
   }
 });
 
-router.get('/clean', (req,res)=>{
-  //fs.writeFileSync(logFilePath, '', 'utf-8'); // 파일만 비우기
-  res.status(200).json({ message: 'Log file cleaned successfully' });
+router.get('/clean', async(req,res)=>{
+  const result = await deleteFile();
+  if (result) {
+    res.status(200).json({ message: 'Log file cleaned successfully' });
+  } else {
+    res.status(200).json({ message: 'nothing to delete it' });
+  }
 })
 
 router.get('/measure', async(req, res) => {
