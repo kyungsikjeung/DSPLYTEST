@@ -40,8 +40,18 @@ module.exports = [
     type: 'asset/resource',
     generator: {
       filename: 'images/[name][ext]', // 빌드시 이미지 저장 경로 설정
+      // publicPath: './images/', // 런타임에서 참조할 경로
     },
   },
+  // {
+    
+  //   test: /\.(xlsx|xls)$/i,
+  //   type: 'asset/resource',
+  //   generator: {
+  //     filename: 'excel/[name][ext]', // 엑셀 파일은 excel 폴더에
+  //   },
+  // },
+  // txt 파일은 webpack으로 처리하지 않음 (런타임에 직접 파일 시스템 사용)
   // {
   //   test: /\.(png|svg|jpg|jpeg|gif)$/i,
   //   type: 'asset/resource',

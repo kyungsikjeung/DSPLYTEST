@@ -1,4 +1,4 @@
-import { readReg } from '../apis/log.js';
+// import { readReg } from '../apis/log.js';
 import React, { useState, useEffect } from 'react';
 
 /*
@@ -23,7 +23,7 @@ export const LOG = () => {
 
   const logMessage = ['0.03초 라이프사이클', 'OFF 라이프사이클'];
 
-  const onClickStartLifeCycle = () => {
+const onClickStartLifeCycle = () => {
     const nextIdx = (lifeCycleIdx + 1) % 2;
     newWindow.open('lifecyclesubwindow');
 
@@ -40,23 +40,23 @@ export const LOG = () => {
   };
 
   const executeCmd = (cmdText) => {
-    const receivedCmd = { cmd: cmdText };
-    readReg(receivedCmd)
-      .then((response) => {
-        const timeStamp = getFormattedTime();
-        if (response.error) {
-          setHasError(true);
-          setLog((prev) => prev + `[${timeStamp}] ${response.error}\n`);
-        } else {
-          setHasError(false);
-          setLog((prev) => prev + `[${timeStamp}] ${response.data}\n`);
-        }
-      })
-      .catch((error) => {
-        const timeStamp = getFormattedTime();
-        setHasError(true);
-        setLog((prev) => prev + `[${timeStamp}] Read failed: ${error}\n`);
-      });
+    // const receivedCmd = { cmd: cmdText };
+    // // readReg(receivedCmd)
+    //   .then((response) => {
+    //     const timeStamp = getFormattedTime();
+    //     if (response.error) {
+    //       setHasError(true);
+    //       setLog((prev) => prev + `[${timeStamp}] ${response.error}\n`);
+    //     } else {
+    //       setHasError(false);
+    //       setLog((prev) => prev + `[${timeStamp}] ${response.data}\n`);
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     const timeStamp = getFormattedTime();
+    //     setHasError(true);
+    //     setLog((prev) => prev + `[${timeStamp}] Read failed: ${error}\n`);
+    //   });
   };
 
   const onClickStartVideo = () => {
@@ -72,6 +72,9 @@ export const LOG = () => {
   };
 
   useEffect(() => {
+    const timeStamp = getFormattedTime();
+    setLog((prev) => prev + `[${timeStamp}]HostInt  \n`);
+
     ipcRenderer.send('subscribe-to-serial', '레지스터세팅');
 
     const handleSerialData = (event, data) => {
@@ -157,8 +160,10 @@ export const LOG = () => {
     window.color.send('grey', greyIndex);
     console.log('감마 측정하기');
     greyIndex++;
+    console.log(greyIndex);
+   
     setTimeout(() => {
-      mouse.click();
+       mouse.click();
     }, 100);
   };
 
@@ -170,7 +175,7 @@ export const LOG = () => {
 
   const measureGamma = () => {
     newWindow.open('colorratiosubwindow');
-    mouse.Move({ x: 1125, y: 1453 });
+    mouse.Move({ x: 2465, y: 1457 });
     if (task == null) {
       task = setInterval(() => {
         taskProcess();
@@ -178,9 +183,9 @@ export const LOG = () => {
           clearInterval(task);
           task = null;
           greyIndex = 0;
-          window.newWindow.close();
+          setTimeout(() => {window.newWindow.close();},1000);
         }
-      }, 400);
+      }, 800);
     }
   };
 

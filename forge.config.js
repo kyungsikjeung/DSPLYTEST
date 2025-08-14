@@ -7,6 +7,10 @@ const { spawn } = require('child_process');
 module.exports = {
   packagerConfig: {
     asar: true,
+    extraResource: [
+      "./public",
+      "./src/services/logs"
+    ]
   },
   rebuildConfig: {},
   makers: [

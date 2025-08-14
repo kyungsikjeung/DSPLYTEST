@@ -22,6 +22,9 @@ module.exports = {
   module: {
     rules,
   },
+  output: {
+    assetModuleFilename: 'images/[name][ext]', // 에셋 모듈 파일명 설정
+  },
 };
 
 

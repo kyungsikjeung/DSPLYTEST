@@ -1,69 +1,204 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { openSerialPort, closeSerialPort, getSerialPortList } from '../apis/serial.js';
+import { listSerialPorts, connectSerial, closeSerialPort, hasCA410 } from '../apis/serial.js';
 
+//  메뉴명 , 링크 관리
 const links = [
-  { path: '/serdes', label: '레지스터 세팅', subLinks: [] },
-  { path: '/alarm', label: '경고등', subLinks: [] },
-  { path: '/alarmcrc', label: '경고등CRC', subLinks: [] },
-  { path: '/usb', label: '펌웨어 업데이트', subLinks: [] },
-  { path: '/monitoring', label: 'Fault모니터링(실시간)', subLinks: [] },
-  { path: '/adclog', label: 'Fault모니터링(단건)', subLinks: [] },
   { path: '/log', label: '로그 모니터링&제어', subLinks: [] },
-  {
-    path: '/serdes/manual',
-    label: '디스플레이테스트(수동)',
-    subLinks: [
-      { path: '/test/manual/pattern', label: '불량화소테스트' },
-      { path: '/test/manual/viewangle', label: '시야각테스트' },
-      { path: '/test/manual/contrastratio', label: '명암비테스트' },
-      { path: '/test/manual/readability', label: '가독성 테스트' },
-      { path: '/test/manual/colorratio', label: '색상비 테스트' },
-      { path: '/test/manual/lightleak', label: '빛샘 멍 테스트' },
-    ],
-  },
-  {
-    path: '/serdes/auto',
-    label: '테스트(자동)',
-    subLinks: [
-      { path: '/test/auto/pattern/gamma', label: '감마 테스트' },
-      { path: '/test/auto/ser/viewangle', label: '시야각 테스트' },
-      { path: '/test/auto/des/contrast', label: '명암비 테스트' },
-    ],
-  },
+  { path: '/test/manual/pattern', label: '불량화소테스트' ,subLinks: [] },
+  { path: '/test/manual/viewangle', label: '시야각테스트' ,subLinks: [] },
+  { path: '/test/manual/contrastratio', label: '명암비테스트' ,subLinks: [] },
+  { path: '/test/manual/readability', label: '가독성 테스트' ,subLinks: [] },
+  { path: '/test/manual/colorratio', label: '색상비 테스트' ,subLinks: [] },
+  { path: '/test/manual/lightleak', label: '빛샘 멍 테스트' ,subLinks: [] },
+  { path: '/test/manual/aspice', label: '패턴 테스트' ,subLinks: [] },
+  { path: '/test/auto/pattern/gamma', label: '감마 테스트' , subLinks: [] },
+  { path: '/test/auto/ser/viewangle', label: '시야각 테스트' , subLinks: [] },
+  { path: '/test/auto/des/contrast', label: '명암비 테스트' , subLinks: [] },
 ];
 
 const Layout = () => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [serialPorts, setSerialPorts] = useState([]);
-  const [selectedPort, setSelectedPort] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [disableButton, setDisableButton] = useState(true);
+  const [selectedPort, setSelectedPort] = useState('');     // 선택된 시리얼 포트(문자열)
+  const [isConnected, setIsConnected] = useState(false);    // 연결 상태
+  const [disableButton, setDisableButton] = useState(true); // 버튼 비활성화 상태
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showX, setShowX] = useState(false);
   const [openMenus, setOpenMenus] = useState({});
 
-  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+  // Electron 환경 가드
+  const ipc = typeof window !== 'undefined' && window.ipcRenderer ? window.ipcRenderer : null;
+
+  // 폴링 stop 핸들 저장용
+  const pollStopRef = useRef(null);
+
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
   const toggleMobileMenu = () => {
-    setIsMobileMenuOpen((prev) => !prev);
-    alert('모바일 메뉴');
+    setIsMobileMenuOpen(prev => !prev);
   };
   const toggleMenu = (index) => {
-    setOpenMenus((prev) => ({ ...prev, [index]: !prev[index] }));
+    setOpenMenus(prev => ({ ...prev, [index]: !prev[index] }));
   };
 
-  const getSerialPorts = async () => {
+  // 안전 폴링: setTimeout 재귀 방식
+  const startPolling = ({ intervalMs = 2000, maxTries = 30 } = {}) => {
+    if (pollStopRef.current) return; // 중복 시작 방지
+
+    let cancelled = false;
+    let timer = null;
+
+    const stop = () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      pollStopRef.current = null;
+    };
+
+    const run = async (attempt = 1) => {
+      if (cancelled) return;
+      try {
+        const ok = await hasCA410();
+        if (ok) {
+          await connectCA410(); // 성공 시 내부에서 상태 세팅
+          stop();
+          return;
+        }
+      } catch (e) {
+        console.error('Polling error:', e);
+        // 에러도 1회 시도로 간주 (원하면 제외 가능)
+      }
+      if (attempt >= maxTries || cancelled) {
+        stop();
+        return;
+      }
+      timer = setTimeout(() => run(attempt + 1), intervalMs);
+    };
+
+    pollStopRef.current = stop;
+    run();
+  };
+
+  const stopPolling = () => {
+    if (pollStopRef.current) {
+      pollStopRef.current(); // 내부 clearTimeout + ref 초기화
+    }
+  };
+
+  // 연결 시도(연결되면 상태 업데이트, 포트 목록 반영)
+  const connectCA410 = async () => {
     try {
-      const ports = await getSerialPortList();
+      const data = await connectSerial();
+      // 예시 응답:
+      // {
+      //   success: true,
+      //   message: "Port opened successfully",
+      //   portList: ["COM6","COM4","COM9"],
+      //   selectedPort: "COM4"
+      // }
+      const ports = Array.isArray(data?.portList) ? data.portList : [];
       setSerialPorts(ports);
+      setDisableButton(ports.length === 0);
+
+      if (data?.success) {
+        setIsConnected(true);
+        setSelectedPort(data?.selectedPort || '');
+        stopPolling();
+      }
+      return data;
     } catch (error) {
-      console.error('시리얼 포트 리스트를 가져오는데 문제가 발생했습니다:', error);
+      console.error('시리얼 연결 시도 실패:', error);
+      return { success: false, error };
+    }
+  };
+
+  // 포트 선택 핸들러 (문자열 값)
+  const handlePortSelect = (e) => {
+    const port = e.target.value;
+    setSelectedPort(port);
+    setDisableButton(!port);
+  };
+
+  // 연결/해제 토글
+  const toggleConnection = async () => {
+    if (isConnected) {
+      try {
+        if (selectedPort) {
+          await closeSerialPort({ portName: selectedPort });
+        } else {
+          // 선택 포트가 비어있다면 서버가 기억하는 현재 포트를 닫는 API가 필요할 수 있음
+          await closeSerialPort({});
+        }
+        setIsConnected(false);
+        // 연결 끊겼으니 폴링 시작
+        startPolling();
+      } catch (error) {
+        console.error('Failed to disconnect:', error);
+      }
+    } else {
+      // 재연결 시도 (선택 포트가 있어도 connectSerial이 내부에서 자동 선택한다면 그대로 사용)
+      const data = await connectCA410();
+      if (!data?.success) {
+        // 실패하면 폴링 시작
+        startPolling();
+      }
     }
   };
 
   useEffect(() => {
-    getSerialPorts();
+    const handlePortOpen = () => {
+      setIsConnected(true);
+      stopPolling();
+    };
+
+    const handlePortClose = async () => {
+      setIsConnected(false);
+      try {
+        const ports = await listSerialPorts();
+        setSerialPorts(ports || []);
+        setSelectedPort('');
+        setDisableButton(!(Array.isArray(ports) && ports.length > 0));
+      } catch (e) {
+        console.error('포트 목록 조회 실패:', e);
+        setSerialPorts([]);
+        setSelectedPort('');
+        setDisableButton(true);
+      }
+      // 닫혔으면 재탐색 폴링 시작
+      startPolling();
+    };
+
+    const handlePortError = (error) => {
+      console.error('포트 에러 발생:', error);
+      // 필요 시 폴링 재개
+      startPolling();
+    };
+
+    // Electron 환경에서만 이벤트 바인딩
+    if (ipc) {
+      ipc.on('port-open', handlePortOpen);
+      ipc.on('port-close', handlePortClose);
+      ipc.on('port-err', handlePortError);
+    }
+
+    // 초기 연결 시도
+    (async () => {
+      const data = await connectCA410();
+      if (!data?.success) {
+        // 실패하면 초기에 포트 목록이라도 갱신
+        try {
+          const ports = await listSerialPorts();
+          setSerialPorts(ports || []);
+          setDisableButton(!(Array.isArray(ports) && ports.length > 0));
+        } catch (e) {
+          console.error('초기 포트 목록 조회 실패:', e);
+        }
+        // 그리고 폴링 시작
+        startPolling();
+      }
+    })();
+
+    // 반응형 처리
     const handleResize = () => {
       if (window.innerWidth >= 768) {
         setIsMobileMenuOpen(false);
@@ -73,50 +208,25 @@ const Layout = () => {
       }
     };
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    handleResize();
 
-  const handlePortSelect = (event) => {
-    const portIndex = event.target.value;
-    if (String(serialPorts[portIndex]?.path).startsWith('COM')) {
-      setDisableButton(false);
-      setSelectedPort(serialPorts[portIndex]?.path);
-    }
-  };
-
-  const toggleConnection = async () => {
-    if (isConnected) {
-      try {
-        await closeSerialPort({ portName: selectedPort });
-        setIsConnected(false);
-      } catch (error) {
-        console.error('Failed to disconnect:', error);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      // 이벤트 해제
+      if (ipc) {
+        ipc.removeListener('port-open', handlePortOpen);
+        ipc.removeListener('port-close', handlePortClose);
+        ipc.removeListener('port-err', handlePortError);
       }
-    } else {
-      if (selectedPort) {
-        try {
-          await openSerialPort({ portName: selectedPort });
-          setIsConnected(true);
-        } catch (error) {
-          console.error('Failed to connect:', error);
-        }
-      }
-    }
-  };
+      // 폴링 정지
+      stopPolling();
+    };
+  }, []); // mount/unmount
 
+  /* 페이지 제목 및 부제목 제너레이터 */
   const getTitleAndSubtitle = () => {
     const currentPath = location.pathname;
     switch (currentPath) {
-      case '/serdes':
-        return { title: '레지스터 설정', subtitle: '시리얼라이져/디시리얼라이져/인디고 레지스터세팅' };
-      case '/alarm':
-        return { title: 'Alarm', subtitle: '경고등 제어' };
-      case '/usb':
-        return { title: 'Firmware Update', subtitle: 'Firmware Update Setting' };
-      case '/monitoring':
-        return { title: 'Fault 모니터링', subtitle: 'Safety A/D 보드 실시간 진단' };
-      case '/log':
-        return { title: '로그 모니터링', subtitle: 'Safety A/D 보드 로그 기록' };
       default:
         return { title: '', subtitle: '' };
     }
@@ -133,7 +243,7 @@ const Layout = () => {
       >
         <div className="flex items-center justify-between h-14 bg-gray-700 shadow-md px-4">
           <span className="text-white font-bold uppercase tracking-widest">
-            <b className="text-red-500">Safety</b> A/D Board
+            <b className="text-red-500">Tovis</b> Display Test
           </span>
           {showX && (
             <button onClick={toggleSidebar} className="text-white focus:outline-none">
@@ -186,13 +296,7 @@ const Layout = () => {
         <div className="flex items-center justify-between h-16 bg-white border-b border-gray-200 shadow-sm">
           <div className="flex items-center px-4">
             <button onClick={toggleSidebar} className="text-gray-500 focus:outline-none focus:text-gray-700 md:hidden">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
               </svg>
             </button>
@@ -200,15 +304,23 @@ const Layout = () => {
           <div className="flex items-center pr-4 space-x-4">
             <select
               onChange={handlePortSelect}
-              className="border rounded-md px-4 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedPort || ''} // 문자열 자체로 관리
+              className="border rounded-md px-8 mt-1 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">PORT</option>
-              {serialPorts.map((port, index) => (
-                <option key={index} value={index}>
-                  {port.path}
+              {serialPorts?.length === 0 && <option value="">PORT</option>}
+              {serialPorts?.length > 0 ? (
+                serialPorts.map((port) => (
+                  <option key={port} value={port}>
+                    {port}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>
+                  No Ports Available
                 </option>
-              ))}
+              )}
             </select>
+
             <button
               onClick={toggleConnection}
               className={`px-4 py-1 mt-4 mb-3 rounded-md text-white ${isConnected ? 'bg-red-500' : 'bg-green-500'} ${
@@ -218,14 +330,9 @@ const Layout = () => {
             >
               {isConnected ? 'Disconnect' : 'Connect'}
             </button>
-            <button
-              onClick={getSerialPorts}
-              className="px-4 py-1 mt-3 mb-3 rounded-md text-white bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              포트조회
-            </button>
           </div>
         </div>
+
         <div className="p-6">
           <h1 className="text-3xl font-bold text-gray-800">{title}</h1>
           <p className="mt-2 text-gray-600">{subtitle}</p>
@@ -242,13 +349,7 @@ const Layout = () => {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-gray-800 bg-opacity-75 z-50 flex flex-col items-center justify-center md:hidden">
           <button onClick={toggleMobileMenu} className="absolute top-4 right-4 text-white focus:outline-none">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
