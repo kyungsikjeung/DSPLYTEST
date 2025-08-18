@@ -4,16 +4,41 @@
 
 이 애플리케이션은 디스플레이 패널의 품질을 정밀하게 측정하고 분석하기 위해 개발된 데스크톱용 테스트 솔루션입니다. 사용자는 다양한 테스트 패턴과 측정 항목을 통해 디스플레이의 성능을 종합적으로 평가할 수 있습니다.
 
-## ✨ 주요 기능
+## ✨ 주요 기능 상세
 
-- **패턴 생성:** 다양한 테스트 목적의 비디오 패턴을 화면에 표시합니다.
-- **Color Ratio (색 재현율) 측정:** 디스플레이의 색상 표현 범위를 분석합니다.
-- **Contrast Ratio (명암비) 측정:** 화면의 밝고 어두운 부분의 차이를 평가합니다.
-- **Gamma (감마) 측정:** 디스플레이의 계조 표현 능력을 분석합니다.
-- **Light Leak (빛샘) 검사:** 화면의 빛샘 현상을 검사합니다.
-- **Readability (가독성) 평가:** 텍스트 및 이미지의 선명도를 측정합니다.
-- **View Angle (시야각) 측정:** 다양한 각도에서의 디스플레이 성능을 평가합니다.
-- **Serial 통신:** 외부 측정 장비와의 연동 및 제어를 지원합니다.
+이 애플리케이션은 메인 윈도우와 서브 윈도우의 유기적인 연동을 통해 각종 디스플레이 테스트를 수행합니다. 메인 윈도우는 테스트 제어 및 결과 확인을, 서브 윈도우는 테스트 대상 디스플레이에 특정 패턴을 표시하는 역할을 합니다.
+
+### 1. 패턴 생성 (Pattern Generation)
+- **목적**: 다양한 표준 테스트 패턴(체커보드, 그라데이션, 단색 등)을 생성합니다.
+- **동작**: 사용자가 메인 윈도우에서 패턴을 선택하면, 해당 패턴이 서브 윈도우를 통해 테스트 대상 디스플레이에 전체 화면으로 표시됩니다. 이는 다른 측정 기능들의 기반이 됩니다.
+
+### 2. 명암비 (Contrast Ratio)
+- **목적**: 디스플레이의 가장 밝은 색(White)과 가장 어두운 색(Black) 간의 비율을 측정하여 동적 범위를 평가합니다.
+- **동작**: 흰색과 검은색 패턴을 순차적으로 테스트 대상 디스플레이에 표시하고, 각 상태에서 외부 측정 장비의 값을 읽어와 자동으로 명암비를 계산합니다.
+
+### 3. 색 재현율 (Color Ratio)
+- **목적**: 디스플레이가 특정 색 공간(sRGB, DCI-P3 등)의 색상을 얼마나 정확하게 표현하는지 측정합니다.
+- **동작**: R, G, B 각각의 최대 색상 값을 테스트 대상 디스플레이에 표시하고, 외부 장비로 측정된 색 좌표를 통해 색 재현율을 계산하고 시각적으로 표시합니다.
+
+### 4. 감마 (Gamma)
+- **목적**: 디스플레이의 계조(Grayscale) 표현 능력이 표준 감마 곡선(예: 2.2)에 얼마나 근접하는지 측정합니다.
+- **동작**: 여러 단계의 회색 패턴을 테스트 대상 디스플레이에 표시하고, 각 단계별 휘도를 측정하여 감마 곡선을 그래프로 보여줍니다.
+
+### 5. 시야각 (Viewing Angle)
+- **목적**: 디스플레이를 정면이 아닌 측면에서 보았을 때 색상이나 밝기가 얼마나 변하는지 평가합니다.
+- **동작**: 특정 패턴을 표시한 상태에서, 사용자가 물리적으로 측정 장비의 위치를 변경하며 여러 각도에서 측정값을 기록하고 비교합니다.
+
+### 6. 빛샘 (Light Leak)
+- **목적**: 어두운 화면에서 디스플레이의 특정 영역이 의도치 않게 밝게 빛나는 현상을 검사합니다.
+- **동작**: 검은색 패턴을 테스트 대상 디스플레이에 표시하고, 측정 장비로 화면의 여러 지점을 측정하여 휘도 균일성을 평가합니다.
+
+### 7. 가독성 (Readability)
+- **목적**: 텍스트, 아이콘 등의 가독성이 특정 환경(예: 차량 주행 환경)에서 얼마나 확보되는지 평가합니다.
+- **동작**: 표준화된 텍스트/이미지 패턴을 테스트 대상 디스플레이에 표시하고, 측정 장비로 선명도(Sharpness)나 MTF(Modulation Transfer Function)를 측정하여 평가합니다.
+
+### 8. Excel 다운로드
+- **목적**: 측정된 모든 테스트 결과를 Excel 파일로 저장하여 보고서를 생성하거나 데이터를 관리합니다.
+- **동작**: 사용자가 다운로드 버튼을 클릭하면, 현재까지 측정된 데이터를 기반으로 Excel 파일을 생성하여 로컬 시스템에 저장합니다.
 
 ## 🛠️ 기술 스택
 
@@ -24,158 +49,112 @@
 
 ## 🏛️ 계층형 아키텍처 (Layered Architecture)
 
-이 프로젝트는 유지보수성과 확장성을 높이기 위해 역할에 따라 코드를 여러 계층으로 분리한 **계층형 아키텍처**를 따릅니다. 각 계층은 독립적인 역할을 수행하며, 이를 통해 코드의 응집도를 높이고 결합도를 낮춥니다.
-
-```plantuml
-@startuml
-!theme vibrant
-title DisplayTest Layered Architecture
-
-frame "Renderer Process (UI/Frontend)" {
-    package "Presentation Layer" {
-        [renderer.js]
-        [pages]
-        [components]
-        [assets]
-        [public]
-    }
-    
-    package "Application Layer" {
-        [services]
-        [routes]
-        [apis]
-    }
-}
-
-frame "Main Process (Backend/Node.js)" {
-  node "Main Process Layer" {
-    [main.js] as Main
-    [preload.js] as Preload
-    [ipc]
-  }
-}
-
-frame "Development Environment" {
-    package "Configuration & Build Layer" {
-        [forge.config.js]
-        [webpack.*.js]
-        [package.json]
-    }
-}
-
-
-"Presentation Layer" -down-> "Application Layer" : Data Request
-"Application Layer" -up-> "Presentation Layer" : UI Update
-
-"Application Layer" ..> "Main Process Layer" : IPC Call
-"Main Process Layer" ..> "Application Layer" : IPC Response
-
-@enduml
-```
-
----
-
-위 다이어그램은 프로젝트의 4가지 주요 계층을 보여줍니다. 각 계층은 명확한 역할을 가지며, 정의된 경로(IPC)를 통해서만 통신하여 코드의 예측 가능성과 안정성을 높입니다.
-
-### 1. Renderer Process: UI & Application Logic
-
-사용자에게 보여지는 모든 화면과 상호작용을 처리하는 영역입니다. 내부적으로 **Presentation Layer**와 **Application Layer**로 나뉩니다.
-
--   **Presentation Layer (표현 계층)**: 다이어그램에 표시된 `pages`, `components` 등 React 컴포넌트를 사용하여 실제 UI를 구성합니다. `renderer.js`가 이 계층의 시작점입니다.
--   **Application Layer (애플리케이션 계층)**: `services`의 비즈니스 로직, `apis`의 외부 통신, `routes`의 화면 라우팅 등 UI를 지원하는 핵심 로직을 담당합니다.
-
-### 2. Main Process: Backend & System Access
-
-OS의 백그라운드에서 실행되며, 파일 시스템 접근, 외부 장비와의 시리얼 통신 등 시스템 레벨의 작업을 처리하는 Node.js 환경입니다.
-
--   **Main Process Layer (메인 프로세스 계층)**: `main.js`에서 앱의 생명주기를 관리하고, `ipc` 핸들러를 통해 Renderer Process의 요청을 받아 처리합니다. `preload.js`는 두 프로세스 간의 보안 통신을 위한 브릿지 역할을 수행합니다.
-
-### 3. Development Environment: Build & Configuration
-
--   **Configuration & Build Layer (설정 및 빌드 계층)**: `webpack`과 `Electron Forge` 설정을 통해 소스 코드를 빌드하고 실행 가능한 애플리케이션으로 패키징하는 모든 도구와 설정 파일이 이 계층에 포함됩니다.
+(이하 아키텍처 설명은 이전과 동일)
 
 ## 📈 시스템 컨텍스트 및 비즈니스 로직
 
 ### 1. 시스템 컨텍스트 다이어그램 (System Context Diagram)
 
-이 다이어그램은 **DisplayTest 애플리케이션**이 외부의 사용자 및 시스템과 어떻게 상호작용하는지 보여주는 최상위 레벨의 아키텍처 뷰입니다.
+(이하 컨텍스트 다이어그램 설명은 이전과 동일)
+
+### 2. 주요 기능 흐름 예시
+
+#### 예시 1: 명암비 측정 흐름
 
 ```plantuml
 @startuml
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+title 예시 1: 명암비 측정 흐름
 
-title System Context Diagram for DisplayTest
+actor "사용자" as User
+participant "메인 윈도우 (UI)" as MainWindow
+participant "서브 윈도우 (디스플레이)" as SubWindow
+participant "애플리케이션 계층" as AppLayer
+participant "메인 프로세스 계층" as MainProcess
+participant "CA-410" as HW
 
-Person(user, "QA Engineer / Technician", "Performs display tests and views results.")
-System(displayTest, "DisplayTest Application", "Desktop application for controlling and automating display quality tests.")
+User -> MainWindow: 1. '명암비 측정' 시작
+MainWindow -> AppLayer: 테스트 요청 (패턴 요청)
+AppLayer -> MainProcess: 측정 창 생성 요청
+MainProcess -> SubWindow: 윈도우 표시
 
-System_Ext(dut, "Display Under Test (DUT)", "The target display screen where test patterns are shown.")
-System_Ext(testEquipment, "External Test Equipment", "Hardware (e.g., colorimeter) that measures display properties via Serial Port.")
+SubWindow ->> AppLayer: 2. 흰색 패턴 표시 완료
+note right of SubWindow: 테스트 요청 패턴 표시
 
-Rel(user, displayTest, "Operates, Starts Tests, Views Results")
-Rel(displayTest, dut, "Renders Test Patterns via Sub-Window")
-Rel(displayTest, testEquipment, "Sends Commands & Receives Data", "Serial")
+AppLayer -> MainProcess: 3. 측정 명령 전송
+MainProcess -> HW: (Serial) "휘도 측정"
+HW --> MainProcess: (Serial) "휘도: 500"
+MainProcess --> AppLayer: 측정 데이터 전달
+
+SubWindow ->> AppLayer: 4. 검은색 패턴 표시 완료
+note right of SubWindow: 테스트 요청 패턴 표시
+
+AppLayer -> MainProcess: 5. 측정 명령 전송
+MainProcess -> HW: (Serial) "휘도 측정"
+HW --> MainProcess: (Serial) "휘도: 0.5"
+MainProcess --> AppLayer: 측정 데이터 전달
+
+AppLayer -> AppLayer: 6. 명암비 계산 (500 / 0.5 = 1000:1)
+AppLayer -> MainWindow: 7. 결과 표시 요청
+MainWindow -> User: 결과 "1000:1" 표시
+
+User -> MainWindow: 8. Excel 다운로드
+MainWindow -> AppLayer: Excel 생성 요청
+AppLayer -> MainProcess: 파일 저장 (Excel)
 @enduml
 ```
 
-- **QA Engineer / Technician**: 애플리케이션을 조작하여 테스트를 시작하고, 측정된 결과를 확인합니다.
-- **DisplayTest Application**: 이 프로젝트의 핵심 소프트웨어 시스템입니다.
-- **Display Under Test (DUT)**: 테스트할 대상 디스플레이입니다. 앱은 이 디스플레이에 제어 가능한 서브 윈도우를 생성하여 특정 테스트 패턴을 표시합니다.
-- **External Test Equipment**: 색채계, 휘도계 등 외부 측정 장비입니다. 시리얼(Serial) 통신을 통해 앱의 제어 명령을 받고, 측정된 데이터를 앱으로 전송합니다.
+**상세 설명:**
 
-### 2. 주요 기능 및 비즈니스 로직 흐름
+1.  **테스트 시작**: 사용자가 `메인 윈도우 (UI)`에서 '명암비 측정' 버튼을 클릭하여 **테스트 요청 (패턴 요청)**을 보냅니다.
+2.  **측정 창 생성 및 패턴 표시**: `애플리케이션 계층`은 `메인 프로세스 계층`에 **측정 창 생성**을 요청하고, `서브 윈도우`는 요청된 패턴(예: 흰색)을 표시 후 완료 신호를 보냅니다.
+3.  **측정 (White)**: 완료 신호를 받은 `애플리케이션 계층`은 `메인 프로세스 계층`과 `CA-410`을 통해 흰색 화면의 휘도 값을 측정합니다.
+4.  **패턴 변경 및 측정 (Black)**: `서브 윈도우`가 검은색 패턴으로 변경되고, 3번 과정이 반복됩니다.
+5.  **계산 및 결과 표시**: `애플리케이션 계층`은 측정된 두 값으로 명암비를 계산하여 `메인 윈도우`에 표시합니다.
+6.  **Excel 다운로드**: 사용자가 `메인 윈도우`에서 다운로드 버튼을 클릭하면, `애플리케이션 계층`이 데이터를 취합하고 `메인 프로세스 계층`이 이를 Excel 파일로 생성하여 저장합니다.
 
-대부분의 테스트는 **"패턴 표시 -> 외부 장비로 측정 -> 데이터 수신 및 처리 -> 결과 표시"** 의 흐름을 따릅니다. 아래는 **명암비(Contrast Ratio) 측정** 기능의 예시 흐름입니다.
+---
+
+#### 예시 2: 감마 측정 흐름
 
 ```plantuml
 @startuml
-title Example Test Flow: Contrast Ratio
+title 예시 2: 감마 측정 흐름
 
-actor "User" as User
-participant "Main Window (UI)" as MainWindow
-participant "Sub-Window (on DUT)" as SubWindow
-participant "Application Layer" as AppLayer
-participant "Main Process Layer" as MainProcess
-participant "External Equipment" as HW
+actor "사용자" as User
+participant "메인 윈도우 (UI)" as MainWindow
+participant "서브 윈도우 (디스플레이)" as SubWindow
+participant "애플리케이션 계층" as AppLayer
+participant "메인 프로세스 계층" as MainProcess
+participant "CA-410" as HW
 
-User -> MainWindow: 1. Start "Contrast Ratio" Test
-MainWindow -> AppLayer: Request Test
-AppLayer -> MainProcess: Create Sub-Window on DUT
-MainProcess -> SubWindow: Show Window
-SubWindow -> SubWindow: 2. Display "White Pattern"
+User -> MainWindow: 1. '감마 측정' 시작
+MainWindow -> AppLayer: 테스트 요청 (패턴 요청)
+AppLayer -> MainProcess: 측정 창 생성 요청
+MainProcess -> SubWindow: 윈도우 표시
 
-AppLayer -> MainProcess: 3. Send "Measure" command
-MainProcess -> HW: (Serial) "MEASURE_LUMINANCE"
-HW --> MainProcess: (Serial) "Luminance: 500"
-MainProcess --> AppLayer: Measurement Data
+loop Grey 0~255 (step: 4)
+    SubWindow ->> AppLayer: 2. 회색조 패턴 표시 완료
+    note right of SubWindow: 테스트 요청 패턴 표시
 
-SubWindow -> SubWindow: 4. Display "Black Pattern"
-AppLayer -> MainProcess: 5. Send "Measure" command
-MainProcess -> HW: (Serial) "MEASURE_LUMINANCE"
-HW --> MainProcess: (Serial) "Luminance: 0.5"
-MainProcess --> AppLayer: Measurement Data
+    AppLayer -> MainProcess: 3. 측정 명령 전송
+    MainProcess -> HW: (Serial) "휘도 측정"
+    HW --> MainProcess: (Serial) "휘도: ..."
+    MainProcess --> AppLayer: 측정 데이터 전달
+end
 
-AppLayer -> AppLayer: 6. Calculate Contrast (500 / 0.5 = 1000:1)
-AppLayer -> MainWindow: 7. Display Result "1000:1"
-MainWindow -> User: Show Result
+AppLayer -> AppLayer: 4. 수집된 데이터로 감마 곡선 계산
+AppLayer -> MainWindow: 5. 감마 곡선 그래프 표시 요청
+MainWindow -> User: 결과 그래프 표시
+
+User -> MainWindow: 6. Excel 다운로드
+MainWindow -> AppLayer: Excel 생성 요청
+AppLayer -> MainProcess: 파일 저장 (Excel)
 @enduml
 ```
 
-**비즈니스 로직 상세 설명:**
+**상세 설명:**
 
-1.  **테스트 시작**: 사용자가 메인 윈도우 UI에서 '명암비 측정' 버튼을 클릭합니다.
-2.  **서브 윈도우 생성 및 패턴 표시**:
-    -   `Application Layer`는 연결된 디스플레이 목록을 확인하고, 사용자가 선택한 `DUT`(테스트 대상 디스플레이)에 경계선 없는 전체 화면 서브 윈도우를 생성하도록 `Main Process Layer`에 요청합니다.
-    -   `SubWindow`는 첫 번째 테스트 패턴(예: 흰색 화면)을 표시합니다.
-3.  **측정 명령 및 데이터 수신 (1차 - White)**:
-    -   `Application Layer`는 `Main Process Layer`를 통해 외부 측정 장비(`HW`)에 "휘도 측정" 명령을 시리얼 통신으로 전송합니다.
-    -   `Main Process Layer`는 장비로부터 측정값(예: `Luminance: 500`)을 수신하고, 이 데이터를 `Application Layer`로 전달합니다.
-4.  **패턴 변경 및 측정 (2차 - Black)**:
-    -   `SubWindow`는 다음 테스트 패턴(예: 검은색 화면)으로 변경합니다.
-    -   3번의 측정/수신 과정이 반복되고, 검은색 화면의 휘도 측정값(예: `Luminance: 0.5`)을 받아옵니다.
-5.  **계산 및 결과 표시**:
-    -   `Application Layer`는 수신된 두 데이터(흰색, 검은색 휘도)를 바탕으로 명암비(500 / 0.5 = 1000:1)를 계산합니다.
-    -   계산된 최종 결과를 메인 윈도우 UI에 업데이트하여 사용자에게 보여줍니다.
-6.  **로깅**: 모든 과정과 최종 결과는 `services/logs`에 기록될 수 있습니다.
-
-이러한 흐름은 `Color Ratio`, `Gamma` 등 다른 모든 측정 기능에서도 유사하게 적용됩니다. 각 기능은 다른 테스트 패턴과 계산 로직을 가질 뿐, 근본적인 아키텍처 흐름은 동일합니다.
+1.  **테스트 시작**: 사용자가 `메인 윈도우 (UI)`에서 '감마 측정'을 시작합니다.
+2.  **반복 측정**: `서브 윈도우`는 **Grey 0부터 255까지 4씩 증가**하며 회색조 패턴을 순차적으로 표시합니다. 각 패턴이 표시될 때마다 `애플리케이션 계층`은 `CA-410`으로 측정을 요청하고 휘도 데이터를 수신합니다.
+3.  **계산 및 결과 표시**: 모든 단계의 측정이 완료되면, `애플리케이션 계층`은 수집된 데이터로 감마 곡선을 계산하여 `메인 윈도우`에 그래프로 표시합니다.
+4.  **Excel 다운로드**: 사용자가 다운로드 버튼을 클릭하면, 모든 회색조 단계별 측정값이 담긴 Excel 보고서가 생성됩니다.

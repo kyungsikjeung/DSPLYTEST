@@ -5,8 +5,11 @@ export const Gamma = () => {
   const [log, setLog] = useState('');
   const greyIndexRef = useRef(0);
   const taskRef = useRef(null);
-  const [data, setData] = useState([]);
+  const [data, setData] = useState([]); // Array of measurement sets
+  const [selectedSetIdx, setSelectedSetIdx] = useState(0); // Index of selected measurement set
+  const [measureNum, setMeasureNum] = useState(1); // Index of selected measurement set
   const [selectedTrial, setSelectedTrial] = useState('all');
+
 
 
   const getFormattedTime = () => {
@@ -30,10 +33,10 @@ export const Gamma = () => {
 
   useEffect(() => {
     (async () => {
-      const measuredData = await getDataAsync();
-      console.log('measuredData:', measuredData); // Debug the structure
-      const gradation = measuredData && measuredData["gradation_step:1"];
-      setData(gradation && gradation.data && gradation.data.measurements ? gradation.data.measurements : []);
+  const measuredData = await getDataAsync();
+  console.log('measuredData:', measuredData); // Debug the structure
+  // If measuredData is array of sets, setData to that array
+  setData(Array.isArray(measuredData) ? measuredData : []);
     })();
     return () => {
       if (taskRef.current) {
@@ -58,6 +61,7 @@ export const Gamma = () => {
   };
 
   let greyIndex = 0;
+  let measurementCnt = 0;
 
   const taskProcess = async () => {
     if (greyIndex >= 256) {
@@ -70,7 +74,8 @@ export const Gamma = () => {
     setLog((prev) => `[${getFormattedTime()}] ${msg}\n`);
 
     await measureLuminance();
-    greyIndex += 4;
+    greyIndex = greyIndex == 255 ? 0 : greyIndex + 4;
+    measurementCnt++;
   };
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -82,13 +87,12 @@ export const Gamma = () => {
   }
 
   const dataDetail = async () => {
-    setLog('상세 데이터 확인');
-//    const data = await getData();
-      const measuredData = await getDataAsync();
-      console.log('measuredData:', measuredData); // Debug the structure
-      const gradation = measuredData && measuredData["gradation_step:1"];
-      setData(gradation && gradation.data && gradation.data.measurements ? gradation.data.measurements : []);
-      console.log('상세 데이터 확인');
+  setLog('상세 데이터 확인');
+  const measuredData = await getDataAsync();
+  console.log('measuredData:', measuredData); // Debug the structure
+  setData(Array.isArray(measuredData) ? measuredData : []);
+  setSelectedSetIdx(0);
+  console.log('상세 데이터 확인');
   };
 
   // Dynamic trial selection handler
@@ -100,21 +104,34 @@ export const Gamma = () => {
   }
 
 
+  const getMeasurementData = async () => {
+    setLog('측정 데이터 가져오기');
+    console.log('측정 데이터 가져오기');
+    const data = await getData();
+    // You can fetch or update measurement data here if needed
+  }
+
+  let isMeasurementFinished = false;
   const measureGamma = async () => {
     window.newWindow?.open('colorratiosubwindow');
-    greyIndex = 0;
+    greyIndex = 0; // 4씩 증가
+    measurementCnt = 0; // 측정 횟수 초기화
+    const numofDataTobemeasured = measureNum * 65;
+    console.log('numofDataTobemeasured:', numofDataTobemeasured);
     await cleanLogFile();
-    await sleep(3000);
-
+    await sleep(1000);
+    
     if (!taskRef.current) {
+
       taskRef.current = setInterval(async () => {
         await taskProcess();
-        if (greyIndex > 256) {
+        console.log('measurementCnt:', measurementCnt);
+        if (measurementCnt == numofDataTobemeasured) {
           clearInterval(taskRef.current);
           taskRef.current = null;
           greyIndex = 0;
 
-          setLog((prev) => `Gray 255\n`);
+          //setLog((prev) => `Gray 255\n`);
           setTimeout(() => {
             window.newWindow?.close();
           }, 1000);
@@ -152,9 +169,8 @@ export const Gamma = () => {
   };
 
   return (
-    <div className="flex flex-col mt-0 scroll-mt-10 items-center h-screen space-y-4">
-      <div>
-        {/* Add measure icon */}
+    <div className="flex flex-col items-center w-full px-2 py-4 space-y-4">
+      <div className="flex flex-wrap justify-center gap-2 w-full">
         <button
           className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded mx-2 my-1"
           onClick={measureGamma}
@@ -180,103 +196,81 @@ export const Gamma = () => {
           상세 데이터 다운로드
         </button>
       </div>
-      <div className="bg-black rounded shadow w-3/5 h-60 overflow-hidden">
-        <p className="text-sm font-bold text-red mb-2 w-full bg-white sticky top-0">
-          측정 현황
-        </p>
-        <div className="overflow-y-auto h-full">
-          <pre className="whitespace-pre-wrap font-mono text-white">{log}</pre>
+
+        <div className="mb-2">
+              <label htmlFor="set-select" className="mr-2 font-bold">감마 측정 횟수:</label>
+              <select
+                id="set-select"
+                className="border rounded px-8 py-1"
+                value={measureNum}
+                onChange={e => setMeasureNum(Number(e.target.value))}
+              >
+                <option key={1} value={1}>{`${1}회`}</option>
+                <option key={2} value={2}>{`${2}회`}</option>
+                <option key={3} value={3}>{`${3}회`}</option>
+                <option key={4} value={4}>{`${4}회`}</option>
+                <option key={5} value={5}>{`${5}회`}</option>
+              </select>
+      </div>  
+
+      <div className="w-full max-w-3xl">
+        <div className="bg-black rounded shadow min-h-32 max-h-60 overflow-y-auto mb-4">
+          <p className="text-sm font-bold text-red mb-2 w-full bg-white sticky top-0">
+            측정 현황
+          </p>
+          <div className="overflow-y-auto">
+            <pre className="whitespace-pre-wrap font-mono text-white">
+              {log && log.trim() ? log : "로그가 없습니다"}
+            </pre>
+          </div>
         </div>
+        
+        {/* 감마 1회~5회 셀렉트 및 테이블 */}
+        {data && data.length > 0 ? (
+          <div className="mt-4 w-full">
+            {data.length > 1 && (
+              <div className="mb-2">
+                <label htmlFor="set-select" className="mr-2 font-bold">감마 측정 결과 선택:</label>
+                <select
+                  id="set-select"
+                  className="border rounded px-2 py-1"
+                  value={selectedSetIdx}
+                  onChange={e => setSelectedSetIdx(Number(e.target.value))}
+                >
+                  {data.slice(0, 5).map((set, idx) => (
+                    <option key={idx} value={idx}>{`감마 ${idx + 1}회`}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {/* Show table if measurements exist */}
+            {data[selectedSetIdx] && Array.isArray(data[selectedSetIdx].measurements) && data[selectedSetIdx].measurements.length > 0 ? (
+              <table className="min-w-full bg-white mt-4">
+                <thead>
+                  <tr>
+                    <th className="py-2 px-4 border-b">계조</th>
+                    <th className="py-2 px-4 border-b">휘도</th>
+                    <th className="py-2 px-4 border-b">감마</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data[selectedSetIdx].measurements.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="py-2 px-4 border-b">{item.gradation}</td>
+                      <td className="py-2 px-4 border-b">{item.luminance}</td>
+                      <td className="py-2 px-4 border-b">{item.gamma !== null ? item.gamma : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center text-gray-500 py-8">데이터가 없습니다</div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center text-gray-500 py-8">데이터가 없습니다</div>
+        )}
       </div>
-
-      {/* Trial selector UI */}
-      {data && data.length > 0 && (
-        <div className="mt-4 w-3/5">
-          <label htmlFor="trial-select" className="mr-2 font-bold">트라이얼 선택:</label>
-          <select
-            id="trial-select"
-            className="border rounded px-2 py-1"
-            value={selectedTrial}
-            onChange={e => setSelectedTrial(e.target.value)}
-          >
-            <option value="all">모두 보기</option>
-            {/* Dynamically list trials based on data */}
-            {(() => {
-              // Find max trial count
-              const maxTrials = Math.max(...data.map(item => item.trials ? item.trials.length : 1));
-              return Array.from({ length: maxTrials }, (_, i) => (
-                <option key={i} value={`trial${i + 1}`}>{`트라이얼 ${i + 1}`}</option>
-              ));
-            })()}
-          </select>
-
-          <table className="min-w-full bg-white mt-4">
-            <thead>
-              <tr>
-                <th className="py-2 px-4 border-b">순번</th>
-                {/* If all, show trial columns side by side */}
-                {selectedTrial === 'all'
-                  ? (() => {
-                      const maxTrials = Math.max(...data.map(item => item.trials ? item.trials.length : 1));
-                      return Array.from({ length: maxTrials }, (_, i) => (
-                        <React.Fragment key={i}>
-                          <th className="py-2 px-4 border-b">계조 (T{i + 1})</th>
-                          <th className="py-2 px-4 border-b">휘도 (T{i + 1})</th>
-                          <th className="py-2 px-4 border-b">감마 (T{i + 1})</th>
-                        </React.Fragment>
-                      ));
-                    })()
-                  : [<th key="grayIndex" className="py-2 px-4 border-b">계조</th>,
-                     <th key="luminance" className="py-2 px-4 border-b">휘도</th>,
-                     <th key="gamma" className="py-2 px-4 border-b">감마</th>]
-                }
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((item, index) => (
-                <tr key={index}>
-                  <td className="py-2 px-4 border-b">{item.id}</td>
-                  {selectedTrial === 'all'
-                    ? (() => {
-                        const maxTrials = Math.max(...data.map(it => it.trials ? it.trials.length : 1));
-                        return Array.from({ length: maxTrials }, (_, i) => {
-                          const trial = item.trials && item.trials[i];
-                          return trial ? (
-                            <React.Fragment key={i}>
-                              <td className="py-2 px-4 border-b">{trial.grayIndex}</td>
-                              <td className="py-2 px-4 border-b">{trial.luminance}</td>
-                              <td className="py-2 px-4 border-b">{trial.gamma}</td>
-                            </React.Fragment>
-                          ) : (
-                            <React.Fragment key={i}>
-                              <td className="py-2 px-4 border-b">-</td>
-                              <td className="py-2 px-4 border-b">-</td>
-                              <td className="py-2 px-4 border-b">-</td>
-                            </React.Fragment>
-                          );
-                        });
-                      })()
-                    : (() => {
-                        // trial1, trial2, ...
-                        const trialIdx = parseInt(selectedTrial.replace('trial', '')) - 1;
-                        const trial = item.trials && item.trials[trialIdx];
-                        return trial ? [
-                          <td key="grayIndex" className="py-2 px-4 border-b">{trial.grayIndex}</td>,
-                          <td key="luminance" className="py-2 px-4 border-b">{trial.luminance}</td>,
-                          <td key="gamma" className="py-2 px-4 border-b">{trial.gamma}</td>
-                        ] : [
-                          <td key="grayIndex" className="py-2 px-4 border-b">-</td>,
-                          <td key="luminance" className="py-2 px-4 border-b">-</td>,
-                          <td key="gamma" className="py-2 px-4 border-b">-</td>
-                        ];
-                      })()
-                  }
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 };
