@@ -14,7 +14,6 @@ router.get('/list', async (req, res) => {
   }
 });
 
-
 // has CA410
 router.get('/hasCA410', async (req, res) => {
   try {
@@ -28,9 +27,6 @@ router.get('/hasCA410', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-
-
 
 /* Serial Port Connect */
 /**
@@ -169,7 +165,7 @@ router.get('/measure', async(req, res) => {
 /* 감마 액셀 파일  */
 router.get('/downloadgamma', async(req, res) => {
   try {
-    const createdFile = await readTextWriteExcel();
+    const createdFile = await readTextWriteExcel(); // 엑셀 파일 생성
     if (!createdFile) {
       return res.status(500).json({ error: 'Error creating file' });
     }
