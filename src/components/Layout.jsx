@@ -4,17 +4,17 @@ import { listSerialPorts, connectSerial, closeSerialPort, hasCA410 } from '../ap
 
 //  메뉴명 , 링크 관리
 const links = [
-  { path: '/log', label: '로그 모니터링&제어', subLinks: [] },
-  { path: '/test/manual/pattern', label: '불량화소테스트' ,subLinks: [] },
+//  { path: '/log', label: '로그 모니터링&제어', subLinks: [] },
   { path: '/test/manual/viewangle', label: '시야각테스트' ,subLinks: [] },
-  { path: '/test/manual/contrastratio', label: '명암비테스트' ,subLinks: [] },
-  { path: '/test/manual/readability', label: '가독성 테스트' ,subLinks: [] },
-  { path: '/test/manual/colorratio', label: '색상비 테스트' ,subLinks: [] },
-  { path: '/test/manual/lightleak', label: '빛샘 멍 테스트' ,subLinks: [] },
+  { path: '/test/manual/pattern', label: '색상비 테스트(선택)' ,subLinks: [] },
+  { path: '/test/manual/colorratio', label: '색상비 테스트(입력)' ,subLinks: [] },
   { path: '/test/manual/aspice', label: '패턴 테스트' ,subLinks: [] },
+  { path: '/test/manual/readability', label: '가독성 테스트' ,subLinks: [] },
+  // { path: '/test/manual/lightleak', label: '빛샘 멍 테스트' ,subLinks: [] },
   { path: '/test/auto/pattern/gamma', label: '감마 테스트' , subLinks: [] },
-  { path: '/test/auto/ser/viewangle', label: '시야각 테스트' , subLinks: [] },
-  { path: '/test/auto/des/contrast', label: '명암비 테스트' , subLinks: [] },
+  { path: '/test/manual/contrastratio', label: '명암비테스트' ,subLinks: [] },
+  // { path: '/test/auto/ser/viewangle', label: '시야각 테스트' , subLinks: [] },
+  // { path: '/test/auto/des/contrast', label: '명암비 테스트' , subLinks: [] },
 ];
 
 const Layout = () => {

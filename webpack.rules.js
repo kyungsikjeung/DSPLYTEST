@@ -43,12 +43,19 @@ module.exports = [
       // publicPath: './images/', // 런타임에서 참조할 경로
     },
   },
-  // {
+  {
+    test: /\.(xlsx|xls|txt)$/i,
+    type: 'asset/resource',
+    generator: {
+      filename: 'src/services/logs/[name][ext]', // 엑셀 파일은 logs 폴더에
+    },
+  },
+  //   {
     
-  //   test: /\.(xlsx|xls)$/i,
+  //   test: /\.(txt)$/i,
   //   type: 'asset/resource',
   //   generator: {
-  //     filename: 'excel/[name][ext]', // 엑셀 파일은 excel 폴더에
+  //     filename: 'logs/[name][ext]', // 엑셀 파일은 logs 폴더에
   //   },
   // },
   // txt 파일은 webpack으로 처리하지 않음 (런타임에 직접 파일 시스템 사용)

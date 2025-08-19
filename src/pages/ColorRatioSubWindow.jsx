@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 
 export const ColorRatioSubWindow = () => {
   const [type, setType] = useState('grey');
-  const [value, setValue] = useState(125);
-  const [color, setColor] = useState('#111111');
+  const [value, setValue] = useState(0);
+  const [color, setColor] = useState(`rgb(0, 0, 0)`);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     window.color?.onReceive((data) => {
+      setLoading(false);
       console.log('서브창: 색상 인덱스 업데이트', JSON.stringify(data));
       switch(data.type){
         case 'grey':
@@ -34,7 +36,23 @@ export const ColorRatioSubWindow = () => {
         width: '100vw',
         height: '100vh',
         margin: 0,
+        position: 'relative',
       }}
-    />
+    >
+      {loading && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          color: '#fff',
+          fontSize: '2rem',
+          fontWeight: 'bold',
+          textShadow: '0 0 8px #000',
+        }}>
+          로딩중...
+        </div>
+      )}
+    </div>
   );
 };
