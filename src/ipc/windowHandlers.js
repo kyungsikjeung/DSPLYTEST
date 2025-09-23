@@ -27,7 +27,10 @@ function setupWindowHandlers(createSubWindow, getSubWindow) {
     // 만약 external Display 없을 시, 개발용
     if (!externalDisplay) {
       externalDisplay = screen.getPrimaryDisplay(); // 기본 모니터 사용 - ex. 노트북
+    }else{
+      console.log(JSON.stringify(externalDisplay));
     }
+
 
     const monitorInfo = {
       x: externalDisplay.bounds.x,
@@ -65,7 +68,7 @@ function setupWindowHandlers(createSubWindow, getSubWindow) {
     subWindow?.close();
   });
 
-  console.log('✅ 윈도우 IPC 핸들러가 설정되었습니다.');
+  console.log('윈도우 IPC 핸들러가 설정되었습니다.');
 }
 
 /**
