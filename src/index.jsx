@@ -30,6 +30,7 @@ import { LightLeakSubWindow } from './pages/LightLeakSubWindow.jsx';
 import { ContrastRatioSubWindow } from './pages/ContrastRatioSubWindow.jsx';
 import { Aspice } from './pages/Aspice.jsx';
 import {AspiceSubWindow} from './pages/AspiceSubWindow.jsx';
+import { Uniformity } from './pages/Uniformity.jsx';
 
 
 //const root = createRoot(document.body);
@@ -40,7 +41,7 @@ root.render(
   <RecoilRoot>
     <HashRouter>
       <Routes>
-
+        "
         <Route path="/aspicesubwindow" element={<AspiceSubWindow />} />
         <Route path="/patternsubwindow" element={<PatternSubWindow />} />
         <Route path="/viewanglesubwindow" element={<ViewAngleSubWindow />} />
@@ -52,18 +53,18 @@ root.render(
         <Route path="/" element={<Layout />}>
           {/* <Route path="alarm" element={<Alarm />} /> */}
           
-          
-          <Route path="log" element={<LOG />} />
-          <Route path="test/manual/pattern" element={<Pattern />} />
-          <Route path="/test/auto/pattern/gamma" element={<Gamma />} />
-          <Route path="test/manual/viewangle" element={<ViewAngle />} />
-          <Route path="test/manual/readability" element={<Readability />} />
-          <Route path="test/manual/colorratio" element={<ColorRatio />} />
-          <Route path="test/manual/lightleak" element={<LightLeak />} />
-          <Route path="test/manual/contrastratio" element={<ContrastRatio />} />
-          <Route path="test/manual/aspice" element={<Aspice />} />
-
-          <Route path="*" element={<h1></h1>} />
+          {/*  */}
+        <Route path="log" element={<LOG />} />
+        <Route path="test/manual/pattern" element={<Pattern />} />
+        <Route path="/test/auto/pattern/gamma" element={<Gamma />} />
+        <Route path="test/manual/viewangle" element={<ViewAngle />} />
+        <Route path="test/manual/readability" element={<Readability />} />
+        <Route path="test/manual/colorratio" element={<ColorRatio />} />
+        <Route path="test/manual/lightleak" element={<LightLeak />} />
+        <Route path="test/manual/contrastratio" element={<ContrastRatio />} />
+        <Route path="test/manual/aspice" element={<Aspice />} />
+        <Route path="test/auto/pattern/uniformity" element={<Uniformity />} />
+        <Route path="*" element={<h1></h1>} />
         </Route>
       </Routes>
     </HashRouter>

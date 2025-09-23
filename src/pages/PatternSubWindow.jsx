@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 
 export const PatternSubWindow = () => {
   const [selectedColorIndex, setSelectedColorIndex] = useState(null);
+  // uniformity test 여부
+  const [isUniformityTest, setIsUniformityTest] = useState(false);
+  
 
   useEffect(() => {
     // 메인창에서 보내주는 색상 변경 메시지 수신
