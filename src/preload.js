@@ -49,7 +49,8 @@ contextBridge.exposeInMainWorld('colorControl', {
   onColorUpdate: (callback) => ipcRenderer.on('update-color', (event, index) => callback(index)),
   sendUniformityMode: (flag, idx) =>{ ipcRenderer.send('set-uniformity-mode', { flag, idx }); console.log('uniformity mode 변경 메시지 전송', flag, idx);},
   onUniformityMode: (callback) => ipcRenderer.on('update-uniformity-mode', (event, data) => {
-    console.log('uniformity mode 변경 메시지 수신', data.flag, data.idx);
+    console.log(JSON.stringify(data));
+    console.log('uniformity mode 변경 메시지 수신');
     callback(data); // { flag, idx } 객체 전달
   }),
 });
@@ -84,14 +85,6 @@ contextBridge.exposeInMainWorld('color', {
   onReceive: (callback) => ipcRenderer.on('respond', (event, msg) => callback(msg)),
 });
 
-// main.js에서 이런 코드가 있어야 함
-ipcMain.on('set-uniformity-mode', (event, data) => {
-  console.log('main.js에서 uniformity mode 수신:', data);
-  
-  // 모든 윈도우 또는 특정 윈도우에 브로드캐스트
-  BrowserWindow.getAllWindows().forEach(window => {
-    window.webContents.send('update-uniformity-mode', data);
-  });
-});
+
 
 

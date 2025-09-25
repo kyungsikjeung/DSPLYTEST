@@ -51,7 +51,8 @@ const setupEventListeners = () => {
 
   ipcMain.on('set-uniformity-mode', (evt, { flag, idx }) => {
     console.log('main.js - set-uniformity-mode', flag, idx);
-    evt.sender.send('update-uniformity-mode', { flag, idx });
+    var obj = { flag, idx };
+    evt.sender.send('update-uniformity-mode', obj);
   });
 
 };
