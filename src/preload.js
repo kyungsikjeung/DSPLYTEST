@@ -84,4 +84,14 @@ contextBridge.exposeInMainWorld('color', {
   onReceive: (callback) => ipcRenderer.on('respond', (event, msg) => callback(msg)),
 });
 
+// main.js에서 이런 코드가 있어야 함
+ipcMain.on('set-uniformity-mode', (event, data) => {
+  console.log('main.js에서 uniformity mode 수신:', data);
+  
+  // 모든 윈도우 또는 특정 윈도우에 브로드캐스트
+  BrowserWindow.getAllWindows().forEach(window => {
+    window.webContents.send('update-uniformity-mode', data);
+  });
+});
+
 
