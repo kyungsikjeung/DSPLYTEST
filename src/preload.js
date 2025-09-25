@@ -47,6 +47,11 @@ contextBridge.exposeInMainWorld('mouse', {
 contextBridge.exposeInMainWorld('colorControl', {
   changeColor: (index) => ipcRenderer.send('subwindow-color-change', index),
   onColorUpdate: (callback) => ipcRenderer.on('update-color', (event, index) => callback(index)),
+  sendUniformityMode: (flag, idx) =>{ ipcRenderer.send('set-uniformity-mode', { flag, idx }); console.log('uniformity mode 변경 메시지 전송', flag, idx);},
+  onUniformityMode: (callback) => ipcRenderer.on('update-uniformity-mode', (event, data) => {
+    console.log('uniformity mode 변경 메시지 수신', data.flag, data.idx);
+    callback(data); // { flag, idx } 객체 전달
+  }),
 });
 //서브창에 원 개수 변경 메시지 전송
 contextBridge.exposeInMainWorld('circleControl', {
