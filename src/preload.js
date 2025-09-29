@@ -47,7 +47,7 @@ contextBridge.exposeInMainWorld('mouse', {
 contextBridge.exposeInMainWorld('colorControl', {
   changeColor: (index) => ipcRenderer.send('subwindow-color-change', index),
   onColorUpdate: (callback) => ipcRenderer.on('update-color', (event, index) => callback(index)),
-  sendUniformityMode: (flag, idx) =>{ ipcRenderer.send('set-uniformity-mode', { flag, idx }); console.log('uniformity mode 변경 메시지 전송', flag, idx);},
+  sendUniformityMode: (flag, idx) =>{ ipcRenderer.send('set-uniformity-mode', { flag, idx });},
   onUniformityMode: (callback) => ipcRenderer.on('update-uniformity-mode', (event, data) => {
     console.log(JSON.stringify(data));
     console.log('uniformity mode 변경 메시지 수신');

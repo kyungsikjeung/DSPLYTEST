@@ -52,7 +52,8 @@ const setupEventListeners = () => {
   ipcMain.on('set-uniformity-mode', (evt, { flag, idx }) => {
     console.log('main.js - set-uniformity-mode', flag, idx);
     var obj = { flag, idx };
-    evt.sender.send('update-uniformity-mode', obj);
+    //evt.sender.send('update-uniformity-mode', obj);
+    subWindow?.webContents?.send('update-uniformity-mode', obj);
   });
 
 };
@@ -102,12 +103,12 @@ const createSubWindow = (url, monitorInfo) => {
   subWindow = new BrowserWindow({
     x: monitorX,
     y: monitorY,
-    // width: monitorWidth,
-    // height: monitorHeight,
-    width: 600,
-    height: 720,
-    fullscreen: false,
-    // fullscreen: true,
+    width: monitorWidth,
+    height: monitorHeight,
+    // width: 600,
+    // height: 720,
+    // fullscreen: false,
+    fullscreen: true,
     frame: false,
     // alwaysOnTop: true,
     webPreferences: {

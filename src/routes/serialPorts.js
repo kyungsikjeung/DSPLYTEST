@@ -7,6 +7,7 @@ const {getRawData,readTextWriteExcel,deleteFile} = require('../services/logs/log
 router.get('/list', async (req, res) => {
   try {
     const ports = await SerialPortManager.listPorts(); // SerialPort.list()
+    console.log(JSON.stringify(ports));
     const portNames = ports.map(port => port.path);
     res.status(200).json(portNames);
   } catch (error) {
@@ -82,11 +83,8 @@ router.get('/connect', async (req, res) => {
     //  console.log(`Sent command: ${command}`);
      await new Promise(resolve => setTimeout(resolve, 10));
    }
-
    /* Device Init End */
    //res.status(200).json({ message: 'Data sent successfully' });
-  
-
     return res.status(200).json({
       success: true,
       message: 'Port opened successfully',
@@ -147,6 +145,7 @@ router.get('/measure', async(req, res) => {
     "MES,1\n"     // 측정 시작 , OKXX,프로브,캘리브레이션채널,x,y,Lv,Flicker%,Flicker[dB] // OK04,P1,0,-99999999,-99999999,-99999999,-0.02,0.7662706
   ];
   
+
   try {
     for (const command of luminanceOnlyCommands) {
       await serialPortManager.sendData(command);
@@ -160,8 +159,6 @@ router.get('/measure', async(req, res) => {
   }
 
 });
-
-
 /* 감마 액셀 파일  */
 router.get('/downloadgamma', async(req, res) => {
   try {

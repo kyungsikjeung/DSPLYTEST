@@ -222,7 +222,7 @@ class SerialPortManager {
           console.log('here')
           await appendLog(lv);
         }
-        this.events.emit('data', text);
+        this.events.emit('data-received', text);
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error('parser 처리 중 오류:', e);

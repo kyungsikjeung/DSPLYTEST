@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { measureLuminance} from '../apis/serial';
+import { measureLuminance } from '../apis/serial';
 
-// Uniformity 계산 함수 (1D 배열)
+// Uniformity 테스트
 const calculateUniformity = (arr) => {
-  if (!arr || arr.length === 0) return { min: 0, max: 0, uni: 0 };
-  const min = Math.min(...arr);
-  const max = Math.max(...arr);
+  const filtered = arr.filter(v => typeof v === "number" && !isNaN(v));
+  if (filtered.length === 0) return { min: 0, max: 0, uni: 0 };
+  const min = Math.min(...filtered);
+  const max = Math.max(...filtered);
   const uni = max > 0 ? ((min / max) * 100).toFixed(4) : 0;
   return { min, max, uni };
 };
@@ -15,27 +16,55 @@ export const Uniformity = () => {
   const [status, setStatus] = useState('대기 중');
   const [checkedColorIndex, setCheckedColorIndex] = useState(null);
   const [measureDisabled, setMeasureDisabled] = useState(false);
-  const [measureData, setMeasureData] = useState([0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000]); // 1차원 배열 (길이 9)
-
+  const [measureData, setMeasureData] = useState(Array(9).fill(0.0)); // 9개 포인트 값
+  const [getPointIndex, setPointIndex] = useState(null); // 현재 선택된 포인트
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // === 시리얼 이벤트 구독 ===
-
+  // 최신 포인트 인덱스를 안전하게 보관하는 Ref
+  const pointIndexRef = useRef(getPointIndex);
   useEffect(() => {
-    // TODO: 실제 환경에서는 serialParser.on('data', handleSerialData) 연결
-    // TODO: 실제 데이터 수신 시, Index, Value 추출 후 setUniformityData(index, value) 호출
-    setUniformityData(0, 0.000000);
+    pointIndexRef.current = getPointIndex;
+  }, [getPointIndex]);
+
+  // Uniformity 데이터 업데이트
+  const setUniformityData = (index, data) => {
+    setMeasureData((prev) => {
+      const copy = [...prev];
+      copy[index] = data;
+      return copy;
+    });
+  };
+
+  // 시리얼 데이터 수신
+  useEffect(() => {
+    const handleSerialData = (event, data) => {
+      console.log('Received serial data from client:', data);
+      const trimmed = data.trim();
+      if (!trimmed.includes(",")) {
+        console.log('Invalid data format, ignoring:', trimmed);
+        return;
+      }
+      const fields = trimmed.split(",");
+      const lv = parseFloat(fields[5]);
+
+      const currentPoint = pointIndexRef.current;
+      if (currentPoint !== null) {
+        setUniformityData(currentPoint - 1, lv);
+        console.log(`Point ${currentPoint} luminance:`, lv);
+      }
+    };
+
+    ipcRenderer.on('serial-data', handleSerialData);
+    return () => {
+      ipcRenderer.removeListener('serial-data', handleSerialData);
+    };
   }, []);
 
   // Uniformity 계산
   const { min, max, uni } = calculateUniformity(measureData);
-  
-  const setUniformityData = (index, data) =>{
-    const newData = [...measureData];
-    newData[index] = data;
-    setMeasureData(newData);
-  }
-  // === 기존 핸들러들 ===
+
+  // === 핸들러들 ===
   const handleStart = () => {
     setStatus('테스트 진행 중');
     if (checkedColorIndex !== null) {
@@ -53,7 +82,9 @@ export const Uniformity = () => {
     window.newWindow.close();
     setCheckedColorIndex(null);
     setMeasureDisabled(false);
-    setMeasureData([]); // 종료 시 측정값 초기화
+    setMeasureData(Array(9).fill(0.0));
+    setPointIndex(null);
+    setError(null);
   };
 
   const handleColorCheck = (index) => {
@@ -62,40 +93,47 @@ export const Uniformity = () => {
     window.colorControl.changeColor(index + 10);
   };
 
-  const test = () => {
-    console.log('test');
-  }
-
-  const pointShowEnd = ()=>{
+  const pointShowEnd = async () => {
+    const currentPoint = pointIndexRef.current; // ✅ 안전하게 Ref에서 가져오기
     setMeasureDisabled(false);
-    if (window.colorControl?.showUniformityPoint) {
-      window.colorControl.showUniformityPoint(pointIndex);
-      window.colorControl?.sendUniformityMode(false, pointIndex);
-      //setTimeout(() => {measureLuminance();}, 10);
-      // TODO:// Test
-      setTimeout(() => {test();}, 10);
-    }
-  }
+    window.colorControl?.sendUniformityMode(false, currentPoint);
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-  const handlePointClick = (pointIndex) => {
-    setStatus(`포인트 ${pointIndex} 선택됨`);
-    setMeasureDisabled(true);
-    window.colorControl?.sendUniformityMode(true, pointIndex);
-    setTimeout(() => {pointShowEnd();}, 2000);
-    
+    try {
+      await measureLuminance();
+      setError(null);
+    } catch {
+      setUniformityData(currentPoint - 1, "ERR");
+      setError(`포인트 ${currentPoint}: CA-410 연결 에러`);
+      setStatus(`재측정에러${currentPoint}. CA-410 연결을 확인해 주세요`);
+    }
+    console.log('측정 완료');
   };
 
-  const handleMeasure = () => {
-    setStatus('측정 시작');
-    console.log('측정하기 실행');
-    // TODO: 시리얼 요청 전송
-    // random data generation 0.000000 ~ 0.000020
-    const simulatedData = Array.from({ length: 9 }, () =>
-      parseFloat((Math.random() * 0.00002).toFixed(6))
-    );
-    setMeasureData(simulatedData);
-    setStatus('측정 완료');
-    
+  const handlePointClick = (pointIndex) => {
+    setError(null); // 새 포인트 선택 시 에러 초기화
+    setStatus(`포인트 ${pointIndex} 선택됨`);
+    setPointIndex(pointIndex);
+    console.log(`포인트 ${pointIndex} 저장함`);
+    setMeasureDisabled(true);
+    window.colorControl?.sendUniformityMode(true, pointIndex);
+    setTimeout(() => {
+      pointShowEnd();
+    }, 2000);
+  };
+
+  const handleMeasure = async () => {
+    const currentPoint = pointIndexRef.current; // ✅ Ref 사용
+    setStatus(`재 측정 시작${currentPoint}`);
+    try {
+      await measureLuminance();
+      setStatus('측정 완료');
+      setError(null);
+    } catch {
+      setUniformityData(currentPoint - 1, "ERR");
+      setError(`포인트 ${currentPoint}: CA-410 연결 에러`);
+      setStatus(`재측정에러${currentPoint}. CA-410 연결을 확인해 주세요`);
+    }
   };
 
   const seePoint = () => {
@@ -103,7 +141,6 @@ export const Uniformity = () => {
       window.newWindow.open('colorratiosubwindow');
     }
     setMeasureDisabled(true);
-    
     setTimeout(() => setMeasureDisabled(false), 2000);
   };
 
@@ -113,7 +150,7 @@ export const Uniformity = () => {
   return (
     <div className="bg-gray-50 text-gray-800 p-8 font-sans">
       <div className="max-w-4xl mx-auto bg-blue-50 p-10 rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold mb-6 text-red-500">불량화소 검사</h1>
+        <h1 className="text-2xl font-bold mb-6 text-red-500">Uniformity 검사</h1>
 
         {/* 목적 */}
         <section className="mb-8">
@@ -160,7 +197,7 @@ export const Uniformity = () => {
                 key={i}
                 onClick={() => handlePointClick(i + 1)}
                 className={`flex items-center justify-center w-20 h-20 rounded-lg border-2 cursor-pointer
-                  ${status.includes(`${i + 1}`) ? 'border-red-500 bg-yellow-100' : 'border-gray-400 bg-white'}`}
+                  ${getPointIndex === i + 1 ? 'border-red-500 bg-yellow-100' : 'border-gray-400 bg-white'}`}
               >
                 <span className="text-xl font-bold">{i + 1}</span>
               </div>
@@ -184,7 +221,9 @@ export const Uniformity = () => {
                             key={col}
                             className="border border-gray-400 px-4 py-2 text-center"
                           >
-                            {measureData[idx].toFixed(6)}
+                            {typeof measureData[idx] === "number"
+                              ? measureData[idx].toFixed(6)
+                              : "ERR"}
                           </td>
                         );
                       })}
@@ -196,6 +235,7 @@ export const Uniformity = () => {
                 <p>Min: {min.toFixed(6)}</p>
                 <p>Max: {max.toFixed(6)}</p>
                 <p className="font-bold text-red-600">Uniformity: {uni}%</p>
+                {error && <p className="text-red-500 font-bold mt-2">{error}</p>}
               </div>
             </>
           ) : (
@@ -228,7 +268,7 @@ export const Uniformity = () => {
                          bg-purple-500 hover:bg-purple-600
                          disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-400"
             >
-              측정하기
+              재측정하기
             </button>
 
             <button

@@ -4,7 +4,7 @@ export const ColorRatioSubWindow = () => {
   const [type, setType] = useState('grey');
   const [value, setValue] = useState(0);
   const [color, setColor] = useState(`rgb(0, 0, 0)`);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     window.color?.onReceive((data) => {

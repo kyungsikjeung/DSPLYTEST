@@ -20,7 +20,7 @@ import { ColorRatio } from './pages/ColorRatio.jsx';
 import { LightLeak } from './pages/LightLeak.jsx';
 import { ContrastRatio } from './pages/ContrastRatio.jsx';
 import { SubWindow1 } from './pages/SubWindow1.jsx';
-
+//WhiteBalance
 
 import { PatternSubWindow } from './pages/PatternSubWindow.jsx';
 import { ViewAngleSubWindow } from './pages/ViewAngleSubWindow.jsx';
@@ -31,6 +31,7 @@ import { ContrastRatioSubWindow } from './pages/ContrastRatioSubWindow.jsx';
 import { Aspice } from './pages/Aspice.jsx';
 import {AspiceSubWindow} from './pages/AspiceSubWindow.jsx';
 import { Uniformity } from './pages/Uniformity.jsx';
+import { WhiteBalance } from './pages/WhiteBalance.jsx';
 
 
 //const root = createRoot(document.body);
@@ -49,12 +50,16 @@ root.render(
         <Route path="/colorratiosubwindow" element={<ColorRatioSubWindow />} />
         <Route path="/lightleaksubwindow" element={<LightLeakSubWindow />} />
         <Route path="/contrastratiosubwindow" element={<ContrastRatioSubWindow />} />
+         
+
         <Route path="/subwindow1" element={<SubWindow1 />} />
         <Route path="/" element={<Layout />}>
           {/* <Route path="alarm" element={<Alarm />} /> */}
           
           {/*  */}
         <Route path="log" element={<LOG />} />
+        <Route path="test/auto/whitebalance" element={<WhiteBalance />} />
+
         <Route path="test/manual/pattern" element={<Pattern />} />
         <Route path="/test/auto/pattern/gamma" element={<Gamma />} />
         <Route path="test/manual/viewangle" element={<ViewAngle />} />
@@ -64,6 +69,7 @@ root.render(
         <Route path="test/manual/contrastratio" element={<ContrastRatio />} />
         <Route path="test/manual/aspice" element={<Aspice />} />
         <Route path="test/auto/pattern/uniformity" element={<Uniformity />} />
+        
         <Route path="*" element={<h1></h1>} />
         </Route>
       </Routes>

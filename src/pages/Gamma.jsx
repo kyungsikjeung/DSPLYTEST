@@ -36,6 +36,7 @@ export const Gamma = () => {
   const measuredData = await getDataAsync();
   console.log('measuredData:', measuredData); // Debug the structure
   // If measuredData is array of sets, setData to that array
+  await cleanTextFile();
   setData(Array.isArray(measuredData) ? measuredData : []);
     })();
     return () => {
@@ -82,7 +83,7 @@ export const Gamma = () => {
 
   const cleanTextFile = async () => {
     await cleanLogFile();
-    setLog('텍스트 파일이 비워졌습니다.');
+    //setLog('텍스트 파일이 비워졌습니다.');
     console.log('텍스트 파일이 비워졌습니다.');
   }
 
@@ -183,7 +184,7 @@ export const Gamma = () => {
         >
           감마 측정 결과 다운로드
         </button>
-        <button
+        {/* <button
           className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded mx-2 my-1"
           onClick={dataDetail}
         >
@@ -194,10 +195,10 @@ export const Gamma = () => {
           onClick={cleanTextFile}
         >
           상세 데이터 다운로드
-        </button>
+        </button> */}
       </div>
 
-        <div className="mb-2">
+        {/* <div className="mb-2">
               <label htmlFor="set-select" className="mr-2 font-bold">감마 측정 횟수:</label>
               <select
                 id="set-select"
@@ -211,7 +212,7 @@ export const Gamma = () => {
                 <option key={4} value={4}>{`${4}회`}</option>
                 <option key={5} value={5}>{`${5}회`}</option>
               </select>
-      </div>  
+      </div>   */}
 
       <div className="w-full max-w-3xl">
         <div className="bg-black rounded shadow min-h-32 max-h-60 overflow-y-auto mb-4">
