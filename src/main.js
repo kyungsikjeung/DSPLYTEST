@@ -23,7 +23,7 @@ const setupEventListeners = () => {
 
   receivedEvent.on('open', (data) => {
     console.log('Serial Connection opened:', data);
-    showNotification('포트상태', '포트가 열렸습니다.');
+    showNotification('포트상태', '포트가 성공적으로 연결되었습니다.');
     mainWindow.webContents.send('port-open', null);
   });
 
